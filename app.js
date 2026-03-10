@@ -1,9 +1,13 @@
 const STORAGE_KEY = 'jarvis-todo-list-v2';
 const THEME_STORAGE_KEY = 'jarvis-theme-v1';
 const THEME_OPTIONS = ['normal', 'galaxy', 'cute'];
+const NOTE_LIMIT = 500;
+const NOTE_SNIPPET_LIMIT = 160;
+const COMPLETED_NOTE_META_LIMIT = 120;
 
 const todoForm = document.getElementById('todoForm');
 const todoInput = document.getElementById('todoInput');
+const noteInput = document.getElementById('noteInput');
 const priorityInput = document.getElementById('priorityInput');
 const dueDateInput = document.getElementById('dueDateInput');
 const todoList = document.getElementById('todoList');
@@ -22,15 +26,73 @@ const todayLabel = document.getElementById('todayLabel');
 const sortBtn = document.getElementById('sortBtn');
 const themePicker = document.getElementById('themePicker');
 
+const taskModal = document.getElementById('taskModal');
+const taskModalTitle = document.getElementById('taskModalTitle');
+const taskModalEyebrow = document.getElementById('taskModalEyebrow');
+const taskModalClose = document.getElementById('taskModalClose');
+const taskEditForm = document.getElementById('taskEditForm');
+const modalTitleInput = document.getElementById('modalTitleInput');
+const modalNoteInput = document.getElementById('modalNoteInput');
+const modalNoteCount = document.getElementById('modalNoteCount');
+const taskDetailView = document.getElementById('taskDetailView');
+const detailTitle = document.getElementById('detailTitle');
+const detailNote = document.getElementById('detailNote');
+
 let currentFilter = 'all';
 let smartSortEnabled = true;
+let activeModal = null;
+let editingTodoId = null;
+let lastModalTrigger = null;
 let todos = loadTodos();
+
+function sanitizeText(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function sanitizeNote(value) {
+  return sanitizeText(value).slice(0, NOTE_LIMIT);
+}
+
+function truncateText(value, limit) {
+  if (value.length <= limit) return value;
+  return `${value.slice(0, limit).trimEnd()}...`;
+}
+
+function normalizeTodo(todo, index = 0) {
+  const createdAt = typeof todo?.createdAt === 'number' ? todo.createdAt : Date.now() - index;
+
+  return {
+    id: typeof todo?.id === 'string' && todo.id ? todo.id : crypto.randomUUID(),
+    text: sanitizeText(todo?.text),
+    note: sanitizeNote(todo?.note),
+    completed: Boolean(todo?.completed),
+    priority: ['high', 'medium', 'low'].includes(todo?.priority) ? todo.priority : 'medium',
+    dueDate: typeof todo?.dueDate === 'string' ? todo.dueDate : '',
+    createdAt,
+  };
+}
 
 function seedTodos() {
   const today = formatDateInput(new Date());
   return [
-    { id: crypto.randomUUID(), text: 'Review redesigned JARVIS Todo app', completed: false, priority: 'high', dueDate: today, createdAt: Date.now() },
-    { id: crypto.randomUUID(), text: 'Add your real missions here', completed: false, priority: 'medium', dueDate: '', createdAt: Date.now() - 1000 },
+    normalizeTodo({
+      id: crypto.randomUUID(),
+      text: 'Review redesigned JARVIS Todo app',
+      note: 'Check the new note flow, open the detail modal, and make sure completed items still keep the context visible.',
+      completed: false,
+      priority: 'high',
+      dueDate: today,
+      createdAt: Date.now(),
+    }),
+    normalizeTodo({
+      id: crypto.randomUUID(),
+      text: 'Add your real missions here',
+      note: '',
+      completed: false,
+      priority: 'medium',
+      dueDate: '',
+      createdAt: Date.now() - 1000,
+    }),
   ];
 }
 
@@ -39,7 +101,8 @@ function loadTodos() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return seedTodos();
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : seedTodos();
+    if (!Array.isArray(parsed)) return seedTodos();
+    return parsed.map((todo, index) => normalizeTodo(todo, index)).filter(todo => todo.text);
   } catch {
     return seedTodos();
   }
@@ -107,15 +170,16 @@ function isOverdue(value) {
   return value < formatDateInput(new Date());
 }
 
-function addTodo(text, priority, dueDate) {
-  todos.unshift({
+function addTodo(text, note, priority, dueDate) {
+  todos.unshift(normalizeTodo({
     id: crypto.randomUUID(),
     text,
+    note,
     priority,
     dueDate,
     completed: false,
     createdAt: Date.now(),
-  });
+  }));
   saveTodos();
   renderTodos();
 }
@@ -132,12 +196,8 @@ function deleteTodo(id) {
   renderTodos();
 }
 
-function editTodo(id) {
-  const current = todos.find(todo => todo.id === id);
-  if (!current) return;
-  const nextText = window.prompt('Edit task', current.text)?.trim();
-  if (!nextText) return;
-  todos = todos.map(todo => todo.id === id ? { ...todo, text: nextText } : todo);
+function updateTodo(id, updates) {
+  todos = todos.map(todo => todo.id === id ? normalizeTodo({ ...todo, ...updates }) : todo);
   saveTodos();
   renderTodos();
 }
@@ -194,6 +254,77 @@ function renderEmpty() {
   todoList.appendChild(empty);
 }
 
+function getMetaText(todo) {
+  if (todo.completed) {
+    return todo.note
+      ? `Completed. Context kept: ${truncateText(todo.note, COMPLETED_NOTE_META_LIMIT)}`
+      : 'Completed. Lovely.';
+  }
+
+  if (isOverdue(todo.dueDate)) {
+    return 'Overdue. Mildly offensive.';
+  }
+
+  if (todo.dueDate) {
+    return `Scheduled for ${formatHumanDate(todo.dueDate)}`;
+  }
+
+  return 'No due date. Pure chaos.';
+}
+
+function openModal(mode, todo, trigger) {
+  activeModal = mode;
+  lastModalTrigger = trigger || document.activeElement;
+  taskModal.hidden = false;
+  taskModal.classList.add('open');
+  document.body.classList.add('modal-open');
+
+  if (mode === 'edit') {
+    editingTodoId = todo.id;
+    taskModalEyebrow.textContent = 'Task editor';
+    taskModalTitle.textContent = 'Edit task';
+    taskEditForm.hidden = false;
+    taskDetailView.hidden = true;
+    modalTitleInput.value = todo.text;
+    modalNoteInput.value = todo.note;
+    updateModalNoteCount();
+    queueMicrotask(() => modalTitleInput.focus());
+    return;
+  }
+
+  editingTodoId = null;
+  taskModalEyebrow.textContent = 'Task details';
+  taskModalTitle.textContent = 'Task note';
+  taskEditForm.hidden = true;
+  taskDetailView.hidden = false;
+  detailTitle.textContent = todo.text;
+  detailNote.textContent = todo.note;
+  queueMicrotask(() => taskModalClose.focus());
+}
+
+function closeModal() {
+  if (taskModal.hidden) return;
+  const focusTarget = lastModalTrigger;
+  activeModal = null;
+  editingTodoId = null;
+  lastModalTrigger = null;
+  taskModal.hidden = true;
+  taskModal.classList.remove('open');
+  document.body.classList.remove('modal-open');
+  taskEditForm.reset();
+  taskDetailView.hidden = true;
+  taskEditForm.hidden = true;
+  updateModalNoteCount();
+
+  if (focusTarget instanceof HTMLElement && focusTarget.isConnected) {
+    focusTarget.focus();
+  }
+}
+
+function updateModalNoteCount() {
+  modalNoteCount.textContent = String(modalNoteInput.value.length);
+}
+
 function renderTodos() {
   todoList.innerHTML = '';
   const items = getFilteredTodos();
@@ -213,6 +344,9 @@ function renderTodos() {
     const priorityBadge = node.querySelector('.priority-badge');
     const dueBadge = node.querySelector('.due-badge');
     const meta = node.querySelector('.todo-meta');
+    const noteWrap = node.querySelector('.todo-note-wrap');
+    const note = node.querySelector('.todo-note');
+    const noteDetailButton = node.querySelector('.note-detail-button');
 
     toggle.checked = todo.completed;
     text.textContent = todo.text;
@@ -231,17 +365,20 @@ function renderTodos() {
       dueBadge.hidden = true;
     }
 
-    meta.textContent = todo.completed
-      ? 'Completed. Lovely.'
-      : isOverdue(todo.dueDate)
-        ? 'Overdue. Mildly offensive.'
-        : todo.dueDate
-          ? `Scheduled for ${formatHumanDate(todo.dueDate)}`
-          : 'No due date. Pure chaos.';
+    if (todo.note) {
+      noteWrap.hidden = false;
+      note.textContent = truncateText(todo.note, NOTE_SNIPPET_LIMIT);
+      noteDetailButton.hidden = false;
+      noteDetailButton.addEventListener('click', event => openModal('detail', todo, event.currentTarget));
+    } else {
+      noteWrap.hidden = true;
+    }
+
+    meta.textContent = getMetaText(todo);
 
     toggle.addEventListener('change', () => toggleTodo(todo.id));
     del.addEventListener('click', () => deleteTodo(todo.id));
-    edit.addEventListener('click', () => editTodo(todo.id));
+    edit.addEventListener('click', event => openModal('edit', todo, event.currentTarget));
 
     todoList.appendChild(node);
   });
@@ -251,19 +388,51 @@ function renderApp() {
   renderTodos();
 }
 
-initTheme();
-todayLabel.textContent = new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date());
-renderApp();
-
 todoForm.addEventListener('submit', event => {
   event.preventDefault();
-  const text = todoInput.value.trim();
+  const text = sanitizeText(todoInput.value);
   if (!text) return;
-  addTodo(text, priorityInput.value, dueDateInput.value);
+
+  addTodo(text, sanitizeNote(noteInput.value), priorityInput.value, dueDateInput.value);
   todoInput.value = '';
+  noteInput.value = '';
   priorityInput.value = 'medium';
   dueDateInput.value = '';
   todoInput.focus();
+});
+
+taskEditForm.addEventListener('submit', event => {
+  event.preventDefault();
+  if (!editingTodoId) return;
+
+  const nextText = sanitizeText(modalTitleInput.value);
+  if (!nextText) {
+    modalTitleInput.focus();
+    return;
+  }
+
+  updateTodo(editingTodoId, {
+    text: nextText,
+    note: sanitizeNote(modalNoteInput.value),
+  });
+  closeModal();
+});
+
+modalNoteInput.addEventListener('input', updateModalNoteCount);
+
+taskModal.addEventListener('click', event => {
+  const closeTarget = event.target.closest('[data-close-modal]');
+  if (closeTarget) {
+    closeModal();
+  }
+});
+
+taskModalClose.addEventListener('click', closeModal);
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !taskModal.hidden) {
+    closeModal();
+  }
 });
 
 clearCompletedBtn.addEventListener('click', clearCompleted);
@@ -285,5 +454,3 @@ sortBtn.addEventListener('click', () => {
 initTheme();
 todayLabel.textContent = new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date());
 renderApp();
-*** End Patch
-PATCH

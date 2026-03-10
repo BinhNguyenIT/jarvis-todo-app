@@ -138,9 +138,9 @@ body {
     radial-gradient(circle at top right, var(--radial-accent-2), transparent 28%),
     linear-gradient(180deg, var(--bg), var(--bg-2) 42%, var(--bg-end) 100%);
 }
-button, input, select { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
-input, select, button { transition: 180ms ease; }
+input, select, textarea, button { transition: 180ms ease; }
 
 .bg-orb {
   position: fixed;
@@ -356,13 +356,21 @@ h1 {
   flex-direction: column;
   gap: 8px;
 }
+.note-field {
+  grid-column: 1 / -1;
+}
 .field span {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--muted);
 }
-input[type="text"], input[type="date"], select {
+.field-help {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+input[type="text"], input[type="date"], select, textarea {
   width: 100%;
   background: var(--surface-input);
   border: 1px solid var(--panel-border);
@@ -371,7 +379,12 @@ input[type="text"], input[type="date"], select {
   color: var(--text);
   outline: none;
 }
-input:focus, select:focus {
+textarea {
+  resize: vertical;
+  min-height: 116px;
+  line-height: 1.5;
+}
+input:focus, select:focus, textarea:focus {
   border-color: var(--focus-border);
   box-shadow: 0 0 0 4px var(--focus-ring);
 }
@@ -518,6 +531,24 @@ input:focus, select:focus {
   font-weight: 600;
   word-break: break-word;
 }
+.todo-note-wrap {
+  display: grid;
+  gap: 10px;
+  align-items: start;
+}
+.todo-note {
+  margin: 0;
+  color: var(--text);
+  opacity: 0.82;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.note-detail-button {
+  width: fit-content;
+  padding: 9px 12px;
+  border-radius: 12px;
+}
 .badges {
   display: flex;
   gap: 8px;
@@ -570,6 +601,79 @@ input:focus, select:focus {
   color: var(--text);
   margin-bottom: 8px;
 }
+.modal-open {
+  overflow: hidden;
+}
+.modal-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 11, 23, 0.56);
+  backdrop-filter: blur(10px);
+}
+.modal-card {
+  position: relative;
+  width: min(640px, 100%);
+  max-height: min(88vh, 860px);
+  padding: 22px;
+  background: var(--panel-strong);
+  overflow: auto;
+}
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+.modal-eyebrow {
+  margin-bottom: 8px;
+}
+.modal-close {
+  flex-shrink: 0;
+}
+.modal-body {
+  display: grid;
+  gap: 16px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.detail-block {
+  display: grid;
+  gap: 8px;
+}
+.detail-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.detail-title,
+.detail-note {
+  margin: 0;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.detail-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+.detail-note {
+  color: var(--text);
+  opacity: 0.86;
+  white-space: pre-wrap;
+}
 .sr-only {
   position: absolute;
   width: 1px;
@@ -594,6 +698,7 @@ input:focus, select:focus {
   }
   .todo-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .todo-form .input-stack { grid-column: 1 / -1; }
+  .todo-form .note-field { grid-column: 1 / -1; }
   .todo-form .primary-btn { grid-column: 1 / -1; }
   .toolbar {
     flex-direction: column;
@@ -660,10 +765,13 @@ input:focus, select:focus {
     margin-bottom: 12px;
   }
   .field span { font-size: 11px; }
-  input[type="text"], input[type="date"], select {
+  input[type="text"], input[type="date"], select, textarea {
     border-radius: 12px;
     padding: 12px;
     min-height: 44px;
+  }
+  textarea {
+    min-height: 108px;
   }
   .primary-btn, .ghost, .filter {
     min-height: 42px;
@@ -726,6 +834,9 @@ input:focus, select:focus {
     gap: 8px;
   }
   .todo-text { font-size: 15px; }
+  .todo-note-wrap {
+    gap: 8px;
+  }
   .badges {
     justify-content: flex-start;
     gap: 6px;
@@ -740,5 +851,19 @@ input:focus, select:focus {
     width: 44px;
     height: 44px;
     border-radius: 12px;
+  }
+  .modal-shell {
+    padding: 12px;
+  }
+  .modal-card {
+    padding: 14px;
+    border-radius: 18px;
+  }
+  .modal-head,
+  .modal-actions {
+    gap: 12px;
+  }
+  .modal-actions > * {
+    width: 100%;
   }
 }
