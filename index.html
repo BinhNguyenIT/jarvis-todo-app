@@ -11,7 +11,7 @@
         let theme = 'dark';
         try {
           const stored = localStorage.getItem(key);
-          if (stored === 'light' || stored === 'dark') {
+          if (stored === 'light' || stored === 'dark' || stored === 'galaxy') {
             theme = stored;
           } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
             theme = 'light';

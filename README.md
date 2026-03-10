@@ -9,7 +9,7 @@ A polished static Todo app built with plain HTML, CSS, and JavaScript.
 - Filters: all / active / done / due today / high priority
 - Smart sorting by status, priority, and due date
 - Progress bar and dashboard stats
-- Dark/light theme toggle with localStorage persistence and system-preference fallback
+- Dark/light/galaxy mood toggle with localStorage persistence and system-preference fallback
 - Persist todo data to localStorage
 - Mobile-friendly glassmorphism UI
 

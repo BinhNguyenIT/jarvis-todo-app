@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'jarvis-todo-list-v2';
 const THEME_STORAGE_KEY = 'jarvis-theme-v1';
+const THEME_SEQUENCE = ['dark', 'light', 'galaxy'];
 
 const todoForm = document.getElementById('todoForm');
 const todoInput = document.getElementById('todoInput');
@@ -55,23 +56,35 @@ function getSystemTheme() {
 function getStoredTheme() {
   try {
     const saved = localStorage.getItem(THEME_STORAGE_KEY);
-    return saved === 'light' || saved === 'dark' ? saved : null;
+    return THEME_SEQUENCE.includes(saved) ? saved : null;
   } catch {
     return null;
   }
 }
 
 function setTheme(theme, persist) {
-  document.documentElement.setAttribute('data-theme', theme);
+  const nextTheme = THEME_SEQUENCE.includes(theme) ? theme : 'dark';
+  document.documentElement.setAttribute('data-theme', nextTheme);
   if (themeToggle) {
-    const isLight = theme === 'light';
-    themeToggle.querySelector('.theme-icon').textContent = isLight ? '☀️' : '🌙';
-    themeToggle.querySelector('.theme-label').textContent = isLight ? 'Light mode' : 'Dark mode';
-    themeToggle.setAttribute('aria-pressed', String(isLight));
+    const modes = {
+      dark: { icon: '🌙', label: 'Dark mood' },
+      light: { icon: '☀️', label: 'Light mood' },
+      galaxy: { icon: '🌌', label: 'Galaxy mood' },
+    };
+    const selected = modes[nextTheme];
+    themeToggle.querySelector('.theme-icon').textContent = selected.icon;
+    themeToggle.querySelector('.theme-label').textContent = selected.label;
+    themeToggle.setAttribute('aria-pressed', String(nextTheme !== 'dark'));
   }
   if (persist) {
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
   }
+}
+
+function cycleTheme(currentTheme) {
+  const currentIndex = THEME_SEQUENCE.indexOf(currentTheme);
+  if (currentIndex === -1) return THEME_SEQUENCE[0];
+  return THEME_SEQUENCE[(currentIndex + 1) % THEME_SEQUENCE.length];
 }
 
 function initTheme() {
@@ -80,8 +93,8 @@ function initTheme() {
 
   if (themeToggle) {
     themeToggle.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-      setTheme(current === 'light' ? 'dark' : 'light', true);
+      const current = document.documentElement.getAttribute('data-theme');
+      setTheme(cycleTheme(current), true);
     });
   }
 
