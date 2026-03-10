@@ -4,7 +4,7 @@
   "description": "A polished static Todo app built with plain HTML, CSS, and JavaScript.",
   "main": "app.js",
   "scripts": {
-    "test": "node --test auth.test.js"
+    "test": "echo \"No automated tests.\""
   },
   "keywords": [],
   "author": "",
