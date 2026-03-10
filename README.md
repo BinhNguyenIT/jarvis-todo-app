@@ -35,3 +35,16 @@ vercel --prod
 ## Specs
 - `specs/todo-galaxy-mood.md` — feature spec for the Galaxy mood theme
 - `specs/001-theme-panel-moods/` — official Spec Kit feature directory for the theme panel and theme list UI
+
+## Auth
+
+The app uses a lightweight local login gate. Enter any username (>=3 chars) and password (>=6 chars) to unlock the mission board. Auth state persists in localStorage until you click Logout.
+
+## Tests
+
+```bash
+npm test
+```
+
+Runs the Node built-in tests covering auth validation and session helpers.
+

@@ -30,6 +30,27 @@
     <div class="bg-orb orb-1"></div>
     <div class="bg-orb orb-2"></div>
     <main class="app shell">
+      <section id="authGate" class="auth-shell card" aria-live="polite">
+        <div class="auth-copy">
+          <p class="eyebrow">JARVIS ACCESS CONTROL</p>
+          <h2>Sign in before touching the mission board.</h2>
+          <p class="sub">Nhẹ nhàng thôi, Ngài — đây là login local demo, không phải ngân hàng hạt nhân.</p>
+        </div>
+        <form id="loginForm" class="auth-form">
+          <label class="field auth-field">
+            <span>Username</span>
+            <input id="usernameInput" type="text" autocomplete="username" placeholder="e.g. jarvisboss" />
+          </label>
+          <label class="field auth-field">
+            <span>Password</span>
+            <input id="passwordInput" type="password" autocomplete="current-password" placeholder="At least 6 characters" />
+          </label>
+          <p id="loginError" class="auth-error" role="alert" hidden></p>
+          <button type="submit" class="primary-btn auth-submit">Sign in</button>
+        </form>
+      </section>
+
+      <section id="appShell" hidden>
       <section class="hero card">
         <div class="hero-content">
           <div class="hero-head">
@@ -37,6 +58,13 @@
               <p class="eyebrow">JARVIS PRODUCTIVITY SYSTEM</p>
               <h1>Todo list, but less ugly.</h1>
               <p class="sub">Focused planning with priorities, due dates, clean visuals, and zero bloat.</p>
+            </div>
+            <div class="auth-status" id="authStatus" hidden>
+              <div>
+                <span class="eyebrow">Signed in as</span>
+                <strong id="userDisplay"></strong>
+              </div>
+              <button id="logoutBtn" class="ghost" type="button">Logout</button>
             </div>
             <section class="theme-panel" aria-label="Theme picker">
               <div class="theme-panel-head">
@@ -178,8 +206,10 @@
           </li>
         </template>
       </section>
+      </section>
     </main>
 
+    <script src="./auth.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>

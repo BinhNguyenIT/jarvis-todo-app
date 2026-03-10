@@ -22,9 +22,39 @@ const todayLabel = document.getElementById('todayLabel');
 const sortBtn = document.getElementById('sortBtn');
 const themePicker = document.getElementById('themePicker');
 
+const authGate = document.getElementById('authGate');
+const appShell = document.getElementById('appShell');
+const loginForm = document.getElementById('loginForm');
+const usernameInput = document.getElementById('usernameInput');
+const passwordInput = document.getElementById('passwordInput');
+const loginError = document.getElementById('loginError');
+const authStatus = document.getElementById('authStatus');
+const userDisplay = document.getElementById('userDisplay');
+const logoutBtn = document.getElementById('logoutBtn');
+
 let currentFilter = 'all';
 let smartSortEnabled = true;
 let todos = loadTodos();
+let session = Auth.loadSession();
+function showAuthError(message) {
+  if (!loginError) return;
+  loginError.textContent = message;
+  loginError.hidden = !message;
+}
+
+function updateAuthUI() {
+  const signedIn = !!session;
+  authGate.hidden = signedIn;
+  appShell.hidden = !signedIn;
+  if (signedIn) {
+    authStatus.hidden = false;
+    userDisplay.textContent = session.username;
+  } else {
+    authStatus.hidden = true;
+    userDisplay.textContent = '';
+  }
+}
+
 
 function seedTodos() {
   const today = formatDateInput(new Date());
@@ -117,19 +147,19 @@ function addTodo(text, priority, dueDate) {
     createdAt: Date.now(),
   });
   saveTodos();
-  render();
+  renderTodos();
 }
 
 function toggleTodo(id) {
   todos = todos.map(todo => todo.id === id ? { ...todo, completed: !todo.completed } : todo);
   saveTodos();
-  render();
+  renderTodos();
 }
 
 function deleteTodo(id) {
   todos = todos.filter(todo => todo.id !== id);
   saveTodos();
-  render();
+  renderTodos();
 }
 
 function editTodo(id) {
@@ -139,13 +169,13 @@ function editTodo(id) {
   if (!nextText) return;
   todos = todos.map(todo => todo.id === id ? { ...todo, text: nextText } : todo);
   saveTodos();
-  render();
+  renderTodos();
 }
 
 function clearCompleted() {
   todos = todos.filter(todo => !todo.completed);
   saveTodos();
-  render();
+  renderTodos();
 }
 
 function getFilteredTodos() {
@@ -194,7 +224,7 @@ function renderEmpty() {
   todoList.appendChild(empty);
 }
 
-function render() {
+function renderTodos() {
   todoList.innerHTML = '';
   const items = getFilteredTodos();
   updateStats();
@@ -247,6 +277,18 @@ function render() {
   });
 }
 
+function renderApp() {
+  renderTodos();
+}
+
+function handleLogout() {
+  Auth.clearSession();
+  session = null;
+  loginForm.reset();
+  showAuthError('');
+  updateAuthUI();
+}
+
 todoForm.addEventListener('submit', event => {
   event.preventDefault();
   const text = todoInput.value.trim();
@@ -265,15 +307,36 @@ filters.addEventListener('click', event => {
   if (!button) return;
   currentFilter = button.dataset.filter;
   [...filters.querySelectorAll('.filter')].forEach(btn => btn.classList.toggle('active', btn === button));
-  render();
+  renderTodos();
 });
 
 sortBtn.addEventListener('click', () => {
   smartSortEnabled = !smartSortEnabled;
   sortBtn.textContent = `Sort: ${smartSortEnabled ? 'smart' : 'manual'}`;
-  render();
+  renderTodos();
 });
+
+loginForm.addEventListener('submit', event => {
+  event.preventDefault();
+  const result = Auth.validateCredentials(usernameInput.value, passwordInput.value);
+  if (!result.ok) {
+    showAuthError(result.message);
+    return;
+  }
+  showAuthError('');
+  Auth.saveSession(result.username);
+  session = { username: result.username };
+  usernameInput.value = '';
+  passwordInput.value = '';
+  updateAuthUI();
+  renderApp();
+});
+
+logoutBtn.addEventListener('click', handleLogout);
 
 initTheme();
 todayLabel.textContent = new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date());
-render();
+updateAuthUI();
+if (session) {
+  renderApp();
+}
