@@ -8,13 +8,14 @@
     <script>
       (function() {
         const key = 'jarvis-theme-v1';
-        let theme = 'dark';
+        const allowedThemes = ['normal', 'galaxy', 'cute'];
+        let theme = 'normal';
         try {
           const stored = localStorage.getItem(key);
-          if (stored === 'light' || stored === 'dark' || stored === 'galaxy') {
+          if (allowedThemes.includes(stored)) {
             theme = stored;
-          } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-            theme = 'light';
+          } else if (stored === 'light' || stored === 'dark') {
+            theme = 'normal';
           }
         } catch {}
         document.documentElement.setAttribute('data-theme', theme);
@@ -37,10 +38,35 @@
               <h1>Todo list, but less ugly.</h1>
               <p class="sub">Focused planning with priorities, due dates, clean visuals, and zero bloat.</p>
             </div>
-            <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle color theme" aria-pressed="false">
-              <span class="theme-icon" aria-hidden="true">🌙</span>
-              <span class="theme-label">Dark mode</span>
-            </button>
+            <section class="theme-panel" aria-label="Theme picker">
+              <div class="theme-panel-head">
+                <span class="theme-panel-label">Theme</span>
+                <span class="theme-panel-note">Pick your mood</span>
+              </div>
+              <div id="themePicker" class="theme-picker" role="list">
+                <button class="theme-option" type="button" data-theme-option="normal" aria-pressed="false">
+                  <span class="theme-swatch normal" aria-hidden="true"></span>
+                  <span class="theme-copy">
+                    <strong>Normal</strong>
+                    <span>Clean daily driver</span>
+                  </span>
+                </button>
+                <button class="theme-option" type="button" data-theme-option="galaxy" aria-pressed="false">
+                  <span class="theme-swatch galaxy" aria-hidden="true"></span>
+                  <span class="theme-copy">
+                    <strong>Galaxy</strong>
+                    <span>Cosmic contrast</span>
+                  </span>
+                </button>
+                <button class="theme-option" type="button" data-theme-option="cute" aria-pressed="false">
+                  <span class="theme-swatch cute" aria-hidden="true"></span>
+                  <span class="theme-copy">
+                    <strong>Cute</strong>
+                    <span>Soft bright energy</span>
+                  </span>
+                </button>
+              </div>
+            </section>
           </div>
           <div class="hero-meta">
             <div class="meta-pill">

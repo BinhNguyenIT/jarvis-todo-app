@@ -9,7 +9,8 @@ A polished static Todo app built with plain HTML, CSS, and JavaScript.
 - Filters: all / active / done / due today / high priority
 - Smart sorting by status, priority, and due date
 - Progress bar and dashboard stats
-- Dark/light/galaxy mood toggle with localStorage persistence and system-preference fallback
+- Theme panel on the UI with `normal`, `galaxy`, and `cute` moods
+- Theme persistence via localStorage
 - Persist todo data to localStorage
 - Mobile-friendly glassmorphism UI
 
@@ -33,3 +34,4 @@ vercel --prod
 
 ## Specs
 - `specs/todo-galaxy-mood.md` — feature spec for the Galaxy mood theme
+- `specs/theme-panel-theme-list.md` — feature spec for the theme panel and theme list UI

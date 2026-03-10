@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'jarvis-todo-list-v2';
 const THEME_STORAGE_KEY = 'jarvis-theme-v1';
-const THEME_SEQUENCE = ['dark', 'light', 'galaxy'];
+const THEME_OPTIONS = ['normal', 'galaxy', 'cute'];
 
 const todoForm = document.getElementById('todoForm');
 const todoInput = document.getElementById('todoInput');
@@ -20,7 +20,7 @@ const progressText = document.getElementById('progressText');
 const progressBar = document.getElementById('progressBar');
 const todayLabel = document.getElementById('todayLabel');
 const sortBtn = document.getElementById('sortBtn');
-const themeToggle = document.getElementById('themeToggle');
+const themePicker = document.getElementById('themePicker');
 
 let currentFilter = 'all';
 let smartSortEnabled = true;
@@ -49,61 +49,41 @@ function saveTodos() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
 }
 
-function getSystemTheme() {
-  return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-}
-
 function getStoredTheme() {
   try {
     const saved = localStorage.getItem(THEME_STORAGE_KEY);
-    return THEME_SEQUENCE.includes(saved) ? saved : null;
+    if (THEME_OPTIONS.includes(saved)) return saved;
+    if (saved === 'dark' || saved === 'light') return 'normal';
+    return null;
   } catch {
     return null;
   }
 }
 
 function setTheme(theme, persist) {
-  const nextTheme = THEME_SEQUENCE.includes(theme) ? theme : 'dark';
+  const nextTheme = THEME_OPTIONS.includes(theme) ? theme : 'normal';
   document.documentElement.setAttribute('data-theme', nextTheme);
-  if (themeToggle) {
-    const modes = {
-      dark: { icon: '🌙', label: 'Dark mood' },
-      light: { icon: '☀️', label: 'Light mood' },
-      galaxy: { icon: '🌌', label: 'Galaxy mood' },
-    };
-    const selected = modes[nextTheme];
-    themeToggle.querySelector('.theme-icon').textContent = selected.icon;
-    themeToggle.querySelector('.theme-label').textContent = selected.label;
-    themeToggle.setAttribute('aria-pressed', String(nextTheme !== 'dark'));
+  if (themePicker) {
+    [...themePicker.querySelectorAll('[data-theme-option]')].forEach(button => {
+      const isActive = button.dataset.themeOption === nextTheme;
+      button.classList.toggle('active', isActive);
+      button.setAttribute('aria-pressed', String(isActive));
+    });
   }
   if (persist) {
     localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
   }
 }
 
-function cycleTheme(currentTheme) {
-  const currentIndex = THEME_SEQUENCE.indexOf(currentTheme);
-  if (currentIndex === -1) return THEME_SEQUENCE[0];
-  return THEME_SEQUENCE[(currentIndex + 1) % THEME_SEQUENCE.length];
-}
-
 function initTheme() {
   const storedTheme = getStoredTheme();
-  setTheme(storedTheme || getSystemTheme(), false);
+  setTheme(storedTheme || 'normal', false);
 
-  if (themeToggle) {
-    themeToggle.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-theme');
-      setTheme(cycleTheme(current), true);
-    });
-  }
-
-  if (!storedTheme && window.matchMedia) {
-    const media = window.matchMedia('(prefers-color-scheme: light)');
-    media.addEventListener('change', event => {
-      if (!getStoredTheme()) {
-        setTheme(event.matches ? 'light' : 'dark', false);
-      }
+  if (themePicker) {
+    themePicker.addEventListener('click', event => {
+      const button = event.target.closest('[data-theme-option]');
+      if (!button) return;
+      setTheme(button.dataset.themeOption, true);
     });
   }
 }
