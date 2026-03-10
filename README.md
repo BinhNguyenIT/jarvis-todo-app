@@ -34,4 +34,4 @@ vercel --prod
 
 ## Specs
 - `specs/todo-galaxy-mood.md` — feature spec for the Galaxy mood theme
-- `specs/theme-panel-theme-list.md` — feature spec for the theme panel and theme list UI
+- `specs/001-theme-panel-moods/` — official Spec Kit feature directory for the theme panel and theme list UI
