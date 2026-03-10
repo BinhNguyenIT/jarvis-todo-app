@@ -30,3 +30,6 @@ If Vercel CLI is installed and logged in:
 ```bash
 vercel --prod
 ```
+
+## Specs
+- `specs/todo-galaxy-mood.md` — feature spec for the Galaxy mood theme
